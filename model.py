@@ -104,6 +104,21 @@ class WESPE(object):
         self.real_X = input['X'].to(self.device)
         self.real_Y = input['Y'].to(self.device)
 
+    def kernel_to_conv2d(self, kernel_size, nsig, channels):
+        out_filter = gaussian_kernel(kernel_size, nsig, channels)
+        gaussian_filter = nn.Conv2d(channels, channels, kernel_size, groups=channels, bias=False, padding=10)
+        gaussian_filter.weight.data = out_filter
+        gaussian_filter.weight.requires_grad = False
+        return gaussian_filter
+        
+        
+    def blur(self, img, kernel_size, sigma, channels, device):
+        out_filter = self.kernel_to_conv2d(kernel_size, sigma, channels).to(device)
+        return out_filter(img)
+    
+    def grayscale(self, img):
+        return torch.unsqueeze(img[:, 0] * 0.299 + img[:, 1] * 0.587 + img[:, 2] * 0.114, 1)
+        
     def forward(self, input):
         self.set_input(input)
 
@@ -119,7 +134,7 @@ class WESPE(object):
         
         self.G_loss = mse_loss(self.c_reconstrucion_loss, self.c_real_loss)
 
-        self.blur_enhanced_Y = self.blur(self.enhanced_Y)
+        self.blur_enhanced_Y = self.blur(self.enhanced_Y, self.opt.kernel_size, self.opt.sigma, self.opt.channels, self.device)
         self.D_c_logit_enhanced_Y = self.D_c(self.blur_enhanced_Y)
         self.D_c_enhanced = bce_loss(self.D_c_logit_enhanced_Y, 0)
 
@@ -138,6 +153,8 @@ class WESPE(object):
         self.D_t_real = bce_loss(self.D_t_logit_real_Y, 1)
 
         self.D_t_loss = self.D_t_enhanced + self.D_t_real
+
+
 
 
 LossOutput = namedtuple(
