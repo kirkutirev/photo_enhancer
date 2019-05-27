@@ -86,7 +86,7 @@ class ConvolutionalBlock(nn.Module):
         return self.model(X)
 
 
-class WESPE(object):
+class WESPE:
     def __init__(self, opt):
         self.opt = opt
         self.set_device(opt)
@@ -121,7 +121,6 @@ class WESPE(object):
         gaussian_filter.weight.data = out_filter
         gaussian_filter.weight.requires_grad = False
         return gaussian_filter
-        
         
     def blur(self, img, kernel_size, sigma, channels, device):
         out_filter = self.kernel_to_conv2d(kernel_size, sigma, channels).to(device)
@@ -166,13 +165,10 @@ class WESPE(object):
         self.D_t_loss = self.D_t_enhanced + self.D_t_real
 
 
-
-
 LossOutput = namedtuple(
     "LossOutput", ["relu1", "relu2", "relu3", "relu4", "relu5"])
 
-
-class LossNetwork(torch.nn.Module):
+class LossNetwork(nn.Module):
     def __init__(self):
         super(LossNetwork, self).__init__()
         self.vgg_layers = vgg.vgg19(pretrained=True).features
