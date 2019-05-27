@@ -5,7 +5,7 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from torchvision.models import vgg
-
+import numpy as np
 from collections import namedtuple
 
 class Generator(nn.Module):
@@ -104,8 +104,19 @@ class WESPE(object):
         self.real_X = input['X'].to(self.device)
         self.real_Y = input['Y'].to(self.device)
 
+    def gaussian_kernel(self, kernel_size=3, nsig=3, channels=1):
+        interval = (2 * nsig + 1) / (kernel_size)
+        x = np.linspace(-nsig - interval / 2, nsig + interval / 2, kernel_size + 1)
+        kernel1d = np.diff(st.norm.cdf(x))
+        kernel_raw = np.sqrt(np.outer(kernel1d, kernel1d))
+        kernel = kernel_raw / kernel_raw.sum()
+        out_filter = np.array(kernel, dtype = np.float32)
+        out_filter = out_filter.reshape((kernel_size, kernel_size, 1, 1))
+        out_filter = np.repeat(out_filter, channels, axis = 2)
+        return out_filter
+        
     def kernel_to_conv2d(self, kernel_size, nsig, channels):
-        out_filter = gaussian_kernel(kernel_size, nsig, channels)
+        out_filter = self.gaussian_kernel(kernel_size, nsig, channels)
         gaussian_filter = nn.Conv2d(channels, channels, kernel_size, groups=channels, bias=False, padding=10)
         gaussian_filter.weight.data = out_filter
         gaussian_filter.weight.requires_grad = False
