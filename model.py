@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from torchvision.models import vgg
 import numpy as np
+import scipy.stats as st
 from collections import namedtuple
 
 class Generator(nn.Module):
